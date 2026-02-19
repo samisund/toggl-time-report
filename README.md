@@ -1,6 +1,8 @@
 # Time Report PDF
 
-Generoi Toggl Trackin tuntikirjauksista selkeän A4-PDF:n laskun liitteeksi.
+Generoi Toggl Trackin tuntikirjauksista selkeän A4-PDF:n laskun liitteeksi. Sovellus hakee kirjaukset Toggl API:sta, tallentaa ne SQLite-välimuistiin ja luo PDF:n valitsemalla kirjaukset päivämäärän, asiakkaan ja projektin perusteella.
+
+Huom! Tämä tuökalu on tuotettu Open AI Codexilla. Käytä omalla vastuullasi ja tarkista koodi ennen käyttöä.
 
 ## Asennus (venv)
 
