@@ -38,6 +38,8 @@ PDF cached‑kirjauksista:
 python generate_invoice_pdf.py pdf --from 2026-01-01 --to 2026-01-31 --out lasku-liite.pdf
 ```
 
+PDF-raportti pyöristää oletuksena jokaisen rivin ylöspäin 0,5 tunnin lohkoihin. Lisää `--exact-hours`, jos haluat näyttää kirjatut tunnit ilman pyöristystä.
+
 Teema:
 
 ```bash

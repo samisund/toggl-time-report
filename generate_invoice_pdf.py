@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import os
 import sqlite3
 import sys
@@ -180,6 +181,11 @@ def parse_args() -> argparse.Namespace:
     pdf.add_argument("--title", default="Työraportti")
     pdf.add_argument("--out", default="invoice-attachment.pdf")
     pdf.add_argument("--theme", default="clean", help="PDF theme (clean, monospace)")
+    pdf.add_argument(
+        "--exact-hours",
+        action="store_true",
+        help="Show exact logged hours instead of rounding up to 0.5h blocks",
+    )
     return parser.parse_args()
 
 
@@ -193,6 +199,15 @@ def fmt_date(d: date) -> str:
 
 def seconds_to_hours(seconds: int) -> float:
     return round(seconds / 3600.0, 2)
+
+
+def round_up_half_hour(seconds: int) -> float:
+    """Round duration seconds up to the next 0.5 hour block expressed in hours."""
+    if seconds <= 0:
+        return 0.0
+    block_seconds = 30 * 60
+    rounded_seconds = math.ceil(seconds / block_seconds) * block_seconds
+    return rounded_seconds / 3600.0
 
 
 def build_mappings(projects: List[dict], clients: List[dict]) -> Tuple[Dict[int, dict], Dict[int, dict]]:
@@ -277,6 +292,7 @@ def generate_pdf(
     date_to: date,
     out_path: str,
     theme: PdfTheme,
+    exact_hours: bool = False,
 ) -> None:
     doc = SimpleDocTemplate(
         out_path,
@@ -303,13 +319,14 @@ def generate_pdf(
     )
 
     table_data = [["Pvm", "Asiakas", "Projekti", "Kuvaus", "Aika (h)"]]
-    total_seconds = 0
+    total_hours = 0.0
 
     for r in rows:
         if r["date"] is None:
             continue
-        hours = seconds_to_hours(r["duration"])
-        total_seconds += r["duration"]
+        duration_seconds = r["duration"]
+        hours = seconds_to_hours(duration_seconds) if exact_hours else round_up_half_hour(duration_seconds)
+        total_hours += hours
         table_data.append(
             [
                 Paragraph(fmt_date(r["date"]), desc_style),
@@ -320,8 +337,9 @@ def generate_pdf(
             ]
         )
 
-    total_hours = seconds_to_hours(total_seconds)
     table_data.append(["", "", "", "Yhteensä", f"{total_hours:.2f}"])
+    total_workdays = total_hours / 7.5 if total_hours else 0.0
+    table_data.append(["", "", "", "Yhteensä (HTP)", f"{total_workdays:.2f}"])
 
     page_width = landscape(A4)[0]
     available_width = page_width - doc.leftMargin - doc.rightMargin
@@ -454,7 +472,7 @@ def main() -> int:
             return 4
 
     theme = get_theme(args.theme)
-    generate_pdf(rows, args.title, date_from, date_to, args.out, theme)
+    generate_pdf(rows, args.title, date_from, date_to, args.out, theme, args.exact_hours)
     print(f"PDF generated: {args.out}")
     return 0
 
